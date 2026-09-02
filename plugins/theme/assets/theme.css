@@ -1,0 +1,16 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    color: #fff;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(95, 80, 220, .35), transparent 35%),
+        radial-gradient(circle at 80% 80%, rgba(0, 180, 170, .25), transparent 35%),
+        #101116;
+}
+main { width: min(100%, 1000px); }
+.engine-footer { margin-top: 1.5rem; text-align: center; color: rgba(255,255,255,.4); font-size: .8rem; }

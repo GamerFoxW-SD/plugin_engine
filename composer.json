@@ -1,0 +1,10 @@
+{
+  "name": "portfolio/plugin-engine",
+  "description": "A small, framework-agnostic PHP plugin engine.",
+  "type": "library",
+  "require": {"php": ">=8.2"},
+  "autoload": {"psr-4": {"Engine\\": "src/"}},
+  "autoload-dev": {"psr-4": {"Tests\\": "tests/"}},
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

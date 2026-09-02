@@ -1,0 +1,7 @@
+{
+  "name": "hello",
+  "version": "1.1.0",
+  "entry": "HelloPlugin",
+  "namespace": "Hello",
+  "dependencies": []
+}
