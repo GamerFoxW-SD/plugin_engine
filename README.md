@@ -12,8 +12,9 @@ Az engine feladata kizárólag a pluginok életciklusának, függőségeinek, be
 * A pluginok csak explicit aktiválás után működnek.
 * A pluginok eseményeken és az engine API-ján keresztül kommunikálnak.
 * Egy hibás plugin `FAILED` állapotba kerülhet anélkül, hogy a többi plugin betöltését megállítaná.
-* Deaktiváláskor a plugin saját event listenerjei automatikusan eltávolításra kerülnek.
+* Deaktiváláskor a plugin saját event listenerei automatikusan eltávolításra kerülnek.
 * Az engine működéséhez nincs szükség Composerre vagy külső PHP csomagra.
+* A projekt közvetlenül futtatható XAMPP vagy cPanel alatt, külön parancssori indítás nélkül.
 
 ## Plugin lifecycle
 
@@ -37,8 +38,10 @@ ACTIVE -> INACTIVE
 
 ```text
 my-plugin-engine/
-│
+
+├── index.php
 ├── autoload.php
+│
 ├── config/
 │   └── plugins.php
 │
@@ -57,9 +60,6 @@ my-plugin-engine/
 │       │   └── ThemePlugin.php
 │       └── assets/
 │           └── theme.css
-│
-├── public/
-│   └── index.php
 │
 ├── src/
 │   ├── Contracts/
@@ -96,7 +96,7 @@ Az engine saját PSR-4 jellegű autoloadert használ.
 A projekt belépési pontja:
 
 ```php
-require dirname(__DIR__) . '/autoload.php';
+require __DIR__ . '/autoload.php';
 ```
 
 Nincs szükség:
@@ -122,6 +122,8 @@ src/Core/Engine.php
 ```
 
 fájlból kerül betöltésre.
+
+A pluginok saját osztályfájljaikat a plugin loader tölti be a plugin manifest alapján.
 
 ## Plugin manifest
 
@@ -191,7 +193,7 @@ interface PluginInterface
 
 ### `register()`
 
-A plugin infrastruktúráját és event listenerjeit regisztrálja.
+A plugin infrastruktúráját, event listenereit és egyéb regisztrációit végzi.
 
 ### `boot()`
 
@@ -244,6 +246,15 @@ final class ExamplePlugin implements PluginInterface
 }
 ```
 
+A plugin könyvtárának legalább a következőket kell tartalmaznia:
+
+```text
+plugins/example/
+├── plugin.json
+└── src/
+    └── ExamplePlugin.php
+```
+
 ## Event rendszer
 
 A pluginok eseményeken keresztül tudnak együttműködni.
@@ -253,22 +264,26 @@ Példa egy render event listenerre:
 ```php
 public function register(PluginContext $context): void
 {
-    $context->events()->listen(
+    $context->listen(
         RenderEvent::class,
         function (RenderEvent $event): void {
-            $event->addSection('<p>Saját plugin tartalom</p>');
+            $event->addSection(
+                '<p>Saját plugin tartalom</p>'
+            );
         }
     );
 }
 ```
 
-A listener a plugin nevéhez van kötve.
+A `PluginContext::listen()` automatikusan az aktuális pluginhoz köti a listenert.
 
 Ez lehetővé teszi, hogy deaktiváláskor az engine automatikusan eltávolítsa az adott pluginhoz tartozó listenereket.
 
+Így egy plugin deaktiválása nem hagy maga után aktív event listenereket.
+
 ## Rendering
 
-A `RenderEvent` egy általános renderelési esemény.
+A `RenderEvent` egy általános, domain-agnosztikus renderelési esemény.
 
 A pluginok például hozzáadhatnak:
 
@@ -280,16 +295,24 @@ A pluginok például hozzáadhatnak:
 Példa:
 
 ```php
-$event->addStyle('/plugins/example/assets/example.css');
+$event->addStyle(
+    '/plugins/example/assets/example.css'
+);
 
-$event->addScript('/plugins/example/assets/example.js');
+$event->addScript(
+    '/plugins/example/assets/example.js'
+);
 
 $event->addSection(
-    '<section class="example">Hello from plugin</section>'
+    '<section class="example">
+        Hello from plugin
+    </section>'
 );
 ```
 
 Az engine nem tudja, hogy ezek pontosan milyen domainhez tartoznak.
+
+A renderelésért felelős alkalmazási réteg dönti el, hogyan jeleníti meg az eseményben összegyűjtött tartalmat.
 
 ## Explicit aktiválás
 
@@ -384,40 +407,65 @@ A `broken` plugin hibája nem akadályozza meg a `theme` és `hello` pluginok m�
 
 A plugin állapotához tartozó hiba a `PluginRecord` objektumban megőrzésre kerül.
 
-## Demo futtatása
+Ez lehetővé teszi, hogy egy hibás vagy elavult plugin külön kezelhető legyen anélkül, hogy szükségszerűen az egész engine-t módosítani kellene.
 
-A projekt XAMPP alatt közvetlenül futtatható.
+## XAMPP használata
 
-PowerShell:
+A projekt közvetlenül futtatható XAMPP alatt.
 
-```powershell
-cd C:\xampp\htdocs\my-plugin-engine
-```
-
-Ezután:
-
-```powershell
-C:\xampp\php\php.exe -S localhost:8000 -t public
-```
-
-Sikeres indítás esetén:
+A projektet másold a XAMPP `htdocs` könyvtárába:
 
 ```text
-PHP 8.2.12 Development Server
-(http://localhost:8000) started
+C:\xampp\htdocs\my-plugin-engine
 ```
+
+Indítsd el az **Apache** modult a XAMPP Control Panelben.
 
 Ezután böngészőben:
 
 ```text
-http://localhost:8000
+http://localhost/my-plugin-engine/
 ```
 
-A szerver leállítása:
+Nincs szükség:
 
 ```text
-Ctrl + C
+php -S
+composer install
+parancssori indítás
 ```
+
+A belépési pont:
+
+```text
+index.php
+```
+
+közvetlenül a projekt gyökerében található.
+
+## cPanel használata
+
+A projekt cPaneles tárhelyen is futtatható, amennyiben a tárhelyen PHP 8.2 vagy újabb verzió érhető el.
+
+Például:
+
+```text
+public_html/
+└── my-plugin-engine/
+    ├── index.php
+    ├── autoload.php
+    ├── config/
+    ├── plugins/
+    └── src/
+```
+
+Ezután a projekt közvetlenül böngészőből érhető el:
+
+```text
+https://sajat-domain.hu/my-plugin-engine/
+```
+
+Nem szükséges SSH vagy parancssori PHP szerver.
 
 ## Ellenőrzés
 
@@ -426,7 +474,7 @@ A PHP fájlok külső csomag nélkül is szintaktikailag ellenőrizhetők.
 PowerShell alatt például:
 
 ```powershell
-Get-ChildItem src, plugins, public, tests -Recurse -Filter *.php |
+Get-ChildItem src, plugins, tests -Recurse -Filter *.php |
     ForEach-Object {
         C:\xampp\php\php.exe -l $_.FullName
     }
@@ -450,24 +498,30 @@ Helyes:
 
 ```text
 Engine
- ├── Plugin loading
- ├── Plugin lifecycle
- ├── Dependencies
- ├── Events
- └── Rendering API
+├── Plugin loading
+├── Plugin lifecycle
+├── Dependencies
+├── Events
+└── Rendering API
 ```
 
 Helytelen:
 
 ```text
 Engine
- ├── Portfolio
- ├── Projects
- ├── Skills
- ├── Contact
- └── About
+├── Portfolio
+├── Projects
+├── Skills
+├── Contact
+└── About
 ```
 
 Ezeknek külön pluginokban kell megjelenniük.
 
 A cél egy olyan rendszer, ahol egy funkció cseréje vagy hibája lehetőleg csak az adott plugin módosítását igényli, miközben az engine változatlan marad.
+
+A rendszer ezáltal alkalmas arra is, hogy egy teljes weboldal vagy alkalmazás funkcionalitása több, egymástól lazán függő pluginból épüljön fel.
+
+Az engine nem maga az alkalmazás.
+
+**Az engine az infrastruktúra, amely lehetővé teszi az alkalmazás pluginokból történő felépítését.**
