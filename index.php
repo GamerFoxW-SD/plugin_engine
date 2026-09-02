@@ -7,6 +7,8 @@ require __DIR__ . '/autoload.php';
 use Engine\Core\Engine;
 use Engine\Rendering\RenderEvent;
 
+$basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+
 $engine = new Engine(__DIR__ . '/plugins');
 $engine->boot();
 
@@ -38,7 +40,7 @@ $title = htmlspecialchars(
     <?php foreach ($render->styles() as $style): ?>
         <link
             rel="stylesheet"
-            href="<?= htmlspecialchars($style, ENT_QUOTES, 'UTF-8') ?>"
+            href="<?= htmlspecialchars($basePath . $style, ENT_QUOTES, 'UTF-8') ?>"
         >
     <?php endforeach; ?>
 </head>
@@ -53,7 +55,7 @@ $title = htmlspecialchars(
 
 <?php foreach ($render->scripts() as $script): ?>
     <script
-        src="<?= htmlspecialchars($script, ENT_QUOTES, 'UTF-8') ?>"
+        src="<?= htmlspecialchars($basePath . $script, ENT_QUOTES, 'UTF-8') ?>"
     ></script>
 <?php endforeach; ?>
 
