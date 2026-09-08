@@ -38,7 +38,19 @@ final class AdminController {
         $u=$this->db->users()->find($uid); $projects=$this->db->projects()->forUser($uid); $skills=$this->db->userSkills()->forUser($uid);
         return '<section class="admin"><nav>'.$this->nav().'</nav><h1>Saját Portfolio admin</h1><p>Bejelentkezve: <b>'.$this->esc($u['name']??'').'</b></p><div class="stats"><b>Skillek '.count($skills).'</b><b>Projektek '.count($projects).'</b></div><p><a class="portfolio-button" href="./u/'.$uid.'">Saját portfolio megtekintése</a></p></section>';
     }
-    private function nav(): string { return '<a href="./admin">Dashboard</a> <a href="./admin/profile">Profil</a> <a href="./admin/skills">Skillek</a> <a href="./admin/projects">Projektek</a> <a href="./admin/theme">Megjelenés</a> <a href="./admin?logout=1">Kilépés</a>'; }
+    private function nav(): string
+{
+    $base = '/git/my-plugin-engine';
+
+    return '
+        <a href="' . $base . '/admin">Dashboard</a>
+        <a href="' . $base . '/admin/profile">Profil</a>
+        <a href="' . $base . '/admin/skills">Skillek</a>
+        <a href="' . $base . '/admin/projects">Projektek</a>
+        <a href="' . $base . '/admin/theme">Megjelenés</a>
+        <a href="' . $base . '/admin?logout=1">Kilépés</a>
+    ';
+}
     private function profile(int $uid, array $post): string {
         $u=$this->db->users()->find($uid);
         if (($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
