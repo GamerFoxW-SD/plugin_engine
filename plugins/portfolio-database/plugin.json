@@ -1,0 +1,7 @@
+{
+  "name": "portfolio-database",
+  "version": "1.2.0",
+  "entry": "PortfolioDatabasePlugin",
+  "namespace": "PortfolioDatabase",
+  "dependencies": {}
+}

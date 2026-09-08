@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-theme",
+  "version": "1.2.0",
+  "entry": "PortfolioThemePlugin",
+  "namespace": "PortfolioTheme",
+  "dependencies": {
+    "portfolio-database": "^1.0"
+  }
+}

@@ -1,10 +1,13 @@
 <?php
-
 declare(strict_types=1);
-
 return [
     'active' => [
-        'theme',
-        'hello',
+        'portfolio-database',
+        'portfolio-registration',
+        'portfolio-theme',
+        'portfolio-admin',
+        'portfolio-home',
+        'portfolio-user',
+        'portfolio-project',
     ],
 ];

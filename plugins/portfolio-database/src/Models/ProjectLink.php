@@ -1,0 +1,4 @@
+<?php
+declare(strict_types=1);
+namespace PortfolioDatabase\Models;
+final class ProjectLink { public function __construct(private \PDO $db) {} public function forProject(int $projectId): array { $s=$this->db->prepare('SELECT * FROM project_links WHERE project_id=? ORDER BY id'); $s->execute([$projectId]); return $s->fetchAll(); } public function find(int $id): ?array { $s=$this->db->prepare('SELECT l.*,p.user_id FROM project_links l JOIN projects p ON p.id=l.project_id WHERE l.id=?'); $s->execute([$id]); return $s->fetch() ?: null; } public function create(int $projectId,string $title,string $url,string $type): int { $s=$this->db->prepare('INSERT INTO project_links(project_id,title,url,type) VALUES(?,?,?,?)'); $s->execute([$projectId,trim($title),trim($url),trim($type)]); return (int)$this->db->lastInsertId(); } public function delete(int $id): void { $s=$this->db->prepare('DELETE FROM project_links WHERE id=?'); $s->execute([$id]); } }

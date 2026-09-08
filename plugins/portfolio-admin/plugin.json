@@ -1,0 +1,10 @@
+{
+  "name": "portfolio-admin",
+  "version": "1.2.0",
+  "entry": "PortfolioAdminPlugin",
+  "namespace": "PortfolioAdmin",
+  "dependencies": {
+    "portfolio-database": "^1.0",
+    "portfolio-theme": "^1.0"
+  }
+}

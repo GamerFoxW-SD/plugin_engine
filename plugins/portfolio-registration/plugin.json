@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-registration",
+  "version": "1.0.0",
+  "entry": "PortfolioRegistrationPlugin",
+  "namespace": "PortfolioRegistration",
+  "dependencies": {
+    "portfolio-database": "^1.0"
+  }
+}
