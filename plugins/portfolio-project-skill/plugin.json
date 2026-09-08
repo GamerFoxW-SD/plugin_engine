@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-project-skill",
+  "version": "1.0.0",
+  "entry": "PortfolioProjectSkillPlugin",
+  "namespace": "PortfolioProjectSkill",
+  "dependencies": {
+    "portfolio-database": "^1.0"
+  }
+}

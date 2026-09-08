@@ -9,5 +9,6 @@ return [
         'portfolio-home',
         'portfolio-user',
         'portfolio-project',
+         'portfolio-project-skill'
     ],
 ];
