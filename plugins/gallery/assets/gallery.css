@@ -1,0 +1,46 @@
+.gallery-plugin {
+    margin: 2rem 0;
+}
+
+.gallery-upload {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.gallery-message {
+    padding: .75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.gallery-item {
+    min-width: 0;
+}
+
+.gallery-item img {
+    display: block;
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.gallery-url {
+    margin-top: .5rem;
+    font-size: .8rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.gallery-url code {
+    white-space: normal;
+}
