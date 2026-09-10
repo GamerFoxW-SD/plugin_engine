@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-project-rating",
+  "version": "1.0.0",
+  "entry": "PortfolioProjectRatingPlugin",
+  "namespace": "PortfolioProjectRating",
+  "dependencies": {
+    "portfolio-database": "^1.0"
+  }
+}
