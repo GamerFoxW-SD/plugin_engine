@@ -46,8 +46,47 @@ final class PortfolioHomePlugin implements PluginInterface
             }
 
             $projectCards = '';
+             $settingsFile = __DIR__ . '/../../portfolio-admin/data/project-settings.json';
+
+       
             foreach ($projects as $p) {
+                 $projectSettings = [];
+
+        if (file_exists($settingsFile)) {
+
+            $allSettings = json_decode(
+                file_get_contents($settingsFile),
+                true
+            );
+
+            if (is_array($allSettings)) {
+                $projectSettings = $allSettings[(string)$p['id']] ?? [];
+            }
+
+        }
+
+
+        /*
+         * Ha nincs beállítva, üres marad
+         */
+        $icon = trim(
+            (string)($projectSettings['icon'] ?? '')
+        );
+
+        $hatter = trim(
+            (string)($projectSettings['hatter'] ?? '')
+        );
+
+         $iconHtml = '';
+
+        if ($icon !== '') {
+
+            $iconHtml =
+                '<img src="'.$e($icon).'" class="portfolio-avatar-small" alt="Icon"> ';
+        }
+
                 $projectCards .= '<article class="portfolio-card">'
+                    . $iconHtml
                     .'<h3>'.$e($p['title']).'</h3>'
                     .'<p>'.$e($p['user_name']).'</p>'
                     .'<a class="portfolio-button" href="'.$base.'/project/'.$p['id'].'">Projekt megtekintése</a>'

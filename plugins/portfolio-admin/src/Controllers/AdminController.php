@@ -241,18 +241,470 @@ private function skills(int $uid, array $post, array $get): string
     ';
 }
 
-    private function projects(int $uid, array $post, array $get): string {
-        if (isset($get['delete'])) { $p=$this->db->projects()->find((int)$get['delete']); if($p && (int)$p['user_id']===$uid) $this->db->projects()->delete((int)$p['id']); }
-        if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && isset($post['title'])) $this->db->projects()->create($uid,(string)$post['title'],(string)($post['description']??''));
-        if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && isset($post['link_url'], $post['project_id'])) { $p=$this->db->projects()->find((int)$post['project_id']); if($p && (int)$p['user_id']===$uid) $this->db->links()->create((int)$p['id'],(string)($post['link_title']??'Link'),(string)$post['link_url'],(string)($post['link_type']??'website')); }
-        if (isset($get['delete_link'])) { $l=$this->db->links()->find((int)$get['delete_link']); if($l && (int)$l['user_id']===$uid) $this->db->links()->delete((int)$l['id']); }
-        $projects=$this->db->projects()->forUser($uid); $opts=''; $rows='';
-        foreach($projects as $p){$opts.='<option value="'.$p['id'].'">'.$this->esc($p['title']).'</option>'; $rows.='<li><b>'.$this->esc($p['title']).'</b> <a href="'.$this->base.'/project/'.$p['id'].'">megtekintés</a> <a href="'.$this->base.'/admin/projects/project-skills?project_id='.$p['id'].'">skillek</a> <a href="'.$this->base.'/admin/projects?delete='.$p['id'].'">×</a></li>';}
-        return '<section class="admin"><nav>'.$this->nav().'</nav><h1>Saját projektek</h1><form method="post"><input name="title" required placeholder="Projekt címe"><textarea name="description" required placeholder="Leírás"></textarea><button>Projekt létrehozása</button></form><h2>Link hozzáadása</h2><form method="post"><select name="project_id" required>'.$opts.'</select><input name="link_title" required placeholder="Link címe"><input name="link_url" type="url" required placeholder="https://..."><select name="link_type"><option value="git">Git</option><option value="website">Weboldal</option><option value="documentation">Dokumentáció</option><option value="video">Videó</option><option value="img">Kép</option><option value="other">Egyéb</option></select><button>Link hozzáadása</button></form><ul>'.$rows.'</ul></section>';
+
+private function projects(int $uid, array $post, array $get): string
+{
+    /*
+     * Közös projekt-beállítás JSON.
+     * Ezt a fájlt kell a másik pluginban is ugyanilyen fizikai
+     * útvonalra beállítani.
+     */
+    $settingsFile = __DIR__ . '/../../data/project-settings.json';
+
+    /*
+     * Kiválasztott projekt ID.
+     *
+     * POST esetén a mentésből jön,
+     * GET esetén pedig a projekt kiválasztásából.
+     */
+    $selectedProjectId = (int)(
+        $post['project_id']
+        ?? $get['project_id']
+        ?? 0
+    );
+
+    /*
+     * Projekt törlése
+     */
+    if (isset($get['delete'])) {
+
+        $projectId = (int)$get['delete'];
+
+        $p = $this->db->projects()->find($projectId);
+
+        if ($p && (int)$p['user_id'] === $uid) {
+
+            $this->db->projects()->delete($projectId);
+
+            /*
+             * A projekt megjelenési beállításának törlése
+             * a JSON-ból is.
+             */
+            if (file_exists($settingsFile)) {
+
+                $settings = json_decode(
+                    file_get_contents($settingsFile),
+                    true
+                );
+
+                if (is_array($settings)) {
+
+                    unset($settings[(string)$projectId]);
+
+                    file_put_contents(
+                        $settingsFile,
+                        json_encode(
+                            $settings,
+                            JSON_PRETTY_PRINT |
+                            JSON_UNESCAPED_UNICODE |
+                            JSON_UNESCAPED_SLASHES
+                        ),
+                        LOCK_EX
+                    );
+                }
+            }
+
+            /*
+             * Ha éppen a kiválasztott projektet töröltük,
+             * ne maradjon az ID kiválasztva.
+             */
+            if ($selectedProjectId === $projectId) {
+                $selectedProjectId = 0;
+            }
+        }
     }
+
+    /*
+     * Új projekt létrehozása
+     */
+    if (
+        ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
+        && isset($post['title'])
+        && !isset($post['project_settings'])
+        && !isset($post['link_url'])
+    ) {
+
+        $this->db->projects()->create(
+            $uid,
+            (string)$post['title'],
+            (string)($post['description'] ?? '')
+        );
+    }
+
+    /*
+     * Projekt megjelenési beállításainak mentése
+     */
+    if (
+        ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
+        && isset($post['project_settings'])
+        && isset($post['project_id'])
+    ) {
+
+        $projectId = (int)$post['project_id'];
+
+        $p = $this->db->projects()->find($projectId);
+
+        /*
+         * Csak a saját projektjét módosíthatja.
+         */
+        if ($p && (int)$p['user_id'] === $uid) {
+
+            /*
+             * JSON betöltése
+             */
+            if (file_exists($settingsFile)) {
+
+                $settings = json_decode(
+                    file_get_contents($settingsFile),
+                    true
+                );
+
+                if (!is_array($settings)) {
+                    $settings = [];
+                }
+
+            } else {
+                $settings = [];
+            }
+
+            /*
+             * Projekt beállításainak mentése.
+             *
+             * A projekt ID lesz a JSON kulcsa.
+             */
+            $settings[(string)$projectId] = [
+                'icon' => trim(
+                    (string)($post['icon'] ?? '')
+                ),
+
+                'hatter' => trim(
+                    (string)($post['hatter'] ?? '')
+                ),
+            ];
+
+            /*
+             * Ha még nincs data könyvtár, létrehozzuk.
+             */
+            $dir = dirname($settingsFile);
+
+            if (!is_dir($dir)) {
+                mkdir($dir, 0775, true);
+            }
+
+            /*
+             * JSON mentése
+             */
+            file_put_contents(
+                $settingsFile,
+                json_encode(
+                    $settings,
+                    JSON_PRETTY_PRINT |
+                    JSON_UNESCAPED_UNICODE |
+                    JSON_UNESCAPED_SLASHES
+                ),
+                LOCK_EX
+            );
+
+            /*
+             * Ez lesz az aktuálisan kiválasztott projekt,
+             * így a mentés után annak adatai töltődnek vissza.
+             */
+            $selectedProjectId = $projectId;
+        }
+    }
+
+    /*
+     * Link hozzáadása
+     */
+    if (
+        ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
+        && isset($post['link_url'], $post['project_id'])
+    ) {
+
+        $projectId = (int)$post['project_id'];
+
+        $p = $this->db->projects()->find($projectId);
+
+        if ($p && (int)$p['user_id'] === $uid) {
+
+            $this->db->links()->create(
+                $projectId,
+                (string)($post['link_title'] ?? 'Link'),
+                (string)$post['link_url'],
+                (string)($post['link_type'] ?? 'website')
+            );
+
+            $selectedProjectId = $projectId;
+        }
+    }
+
+    /*
+     * Link törlése
+     */
+    if (isset($get['delete_link'])) {
+
+        $linkId = (int)$get['delete_link'];
+
+        $l = $this->db->links()->find($linkId);
+
+        if ($l && (int)$l['user_id'] === $uid) {
+            $this->db->links()->delete($linkId);
+        }
+    }
+
+    /*
+     * Projekt megjelenési beállításainak betöltése
+     *
+     * FONTOS:
+     * Itt már a $selectedProjectId-ot használjuk,
+     * nem a foreach-ben létrejövő $projectId változót.
+     */
+    $projectSettings = [];
+
+    if (
+        $selectedProjectId > 0
+        && file_exists($settingsFile)
+    ) {
+
+        $allSettings = json_decode(
+            file_get_contents($settingsFile),
+            true
+        );
+
+        if (is_array($allSettings)) {
+
+            $projectSettings =
+                $allSettings[(string)$selectedProjectId]
+                ?? [];
+        }
+    }
+
+    /*
+     * Icon és háttér értékek
+     */
+    $icon = trim(
+        (string)($projectSettings['icon'] ?? '')
+    );
+
+    $hatter = trim(
+        (string)($projectSettings['hatter'] ?? '')
+    );
+
+    /*
+     * HTML escape
+     */
+    $e = static fn ($v): string =>
+        htmlspecialchars(
+            (string)$v,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
+
+    /*
+     * Projektek lekérése
+     */
+    $projects = $this->db->projects()->forUser($uid);
+
+    $opts = '';
+    $rows = '';
+
+    foreach ($projects as $p) {
+
+        $projectId = (int)$p['id'];
+
+        /*
+         * A kiválasztott projekt legyen selected.
+         */
+        $selected =
+            $projectId === $selectedProjectId
+            ? ' selected'
+            : '';
+
+        $opts .=
+            '<option value="' . $projectId . '"' . $selected . '>'
+            . $this->esc($p['title'])
+            . '</option>';
+
+        $rows .=
+            '<li>'
+            . '<b>' . $this->esc($p['title']) . '</b> '
+            . '<a href="' . $this->base . '/project/' . $projectId . '">'
+            . 'megtekintés'
+            . '</a> '
+            . '<a href="' . $this->base . '/admin/projects/project-skills?project_id=' . $projectId . '">'
+            . 'skillek'
+            . '</a> '
+            . '<a href="' . $this->base . '/admin/projects?delete=' . $projectId . '">'
+            . '×'
+            . '</a>'
+            . '</li>';
+    }
+
+    /*
+     * HTML
+     */
+    return '
+    <section class="admin">
+
+        <nav>
+            ' . $this->nav() . '
+        </nav>
+
+        <h1>Saját projektek</h1>
+
+
+        <!-- ÚJ PROJEKT -->
+
+        <form method="post">
+
+            <input
+                name="title"
+                required
+                placeholder="Projekt címe"
+            >
+
+            <textarea
+                name="description"
+                required
+                placeholder="Leírás"
+            ></textarea>
+
+            <button>
+                Projekt létrehozása
+            </button>
+
+        </form>
+
+
+        <!-- PROJEKT MEGJELENÉS -->
+
+        <h2>Projekt megjelenés</h2>
+
+        <form method="post">
+
+            <input
+                type="hidden"
+                name="project_settings"
+                value="1"
+            >
+
+            <select
+                name="project_id"
+                required
+            >
+
+                ' . $opts . '
+
+            </select>
+
+
+            <input
+                name="icon"
+                type="text"
+                placeholder="Icon"
+                value="' . $e($icon) . '"
+            >
+
+
+            <input
+                name="hatter"
+                type="text"
+                placeholder="Háttér"
+                value="' . $e($hatter) . '"
+            >
+
+
+            <button>
+                Megjelenés mentése
+            </button>
+
+        </form>
+
+
+        <!-- LINK HOZZÁADÁSA -->
+
+        <h2>Link hozzáadása</h2>
+
+        <form method="post">
+
+            <select
+                name="project_id"
+                required
+            >
+
+                ' . $opts . '
+
+            </select>
+
+
+            <input
+                name="link_title"
+                required
+                placeholder="Link címe"
+            >
+
+
+            <input
+                name="link_url"
+                type="url"
+                required
+                placeholder="https://..."
+            >
+
+
+            <select name="link_type">
+
+                <option value="git">
+                    Git
+                </option>
+
+                <option value="website">
+                    Weboldal
+                </option>
+
+                <option value="documentation">
+                    Dokumentáció
+                </option>
+
+                <option value="video">
+                    Videó
+                </option>
+
+                <option value="img">
+                    Kép
+                </option>
+
+                <option value="other">
+                    Egyéb
+                </option>
+
+            </select>
+
+
+            <button>
+                Link hozzáadása
+            </button>
+
+        </form>
+
+
+        <!-- PROJEKTEK -->
+
+        <ul>
+
+            ' . $rows . '
+
+        </ul>
+
+    </section>';
+}
+
     private function theme(int $uid, array $post): string {
         if (($_SERVER['REQUEST_METHOD']??'GET')==='POST') $this->theme->saveForUser($uid,$post);
         $s=$this->theme->settingsForUser($uid);
         return '<section class="admin"><nav>'.$this->nav().'</nav><h1>Saját portfolio megjelenése</h1><p>Ezek a beállítások csak a saját <code>/u/'.$uid.'</code> oldaladon és a saját projektoldalaidon érvényesek.</p><form method="post"><label>Primary<input type="color" name="primary" value="'.$this->esc($s['primary']).'"></label><label>Secondary<input type="color" name="secondary" value="'.$this->esc($s['secondary']).'"></label><label>Background<input type="color" name="background" value="'.$this->esc($s['background']).'"></label><label>Text<input type="color" name="text" value="'.$this->esc($s['text']).'"></label><label>Card<input type="color" name="card" value="'.$this->esc($s['card']).'"></label><label>Radius<input type="text" name="radius" value="'.$this->esc($s['radius']).'"></label><label>Custom CSS<textarea name="custom_css">'.$this->esc($s['custom_css']).'</textarea></label><button>Mentés</button></form></section>';
     }
+
+
+    
 }
