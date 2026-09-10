@@ -22,7 +22,7 @@ input,textarea,select{background:var(--portfolio-card);color:var(--portfolio-tex
 }
 
 
-.portfolio-wrap h1{
+.portfolio-wrap .h_tittle{
     background-color: rgba(0, 0, 0, 0.6);
     /* width: 100%; */
     padding: 40px;

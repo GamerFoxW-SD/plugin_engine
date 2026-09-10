@@ -351,7 +351,7 @@ public function register(PluginContext $context): void
                 /*
                  * Projekt címe + icon
                  */
-                .'<h1>'
+                .'<h1 '.($backgroundStyle=="" ? '' : 'class="h_tittle"').'>'
                     .$iconHtml
                     .$e($p['title'])
                 .'</h1>'
