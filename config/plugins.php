@@ -11,5 +11,6 @@ return [
         'portfolio-project',
          'portfolio-project-skill',
          'gallery',
+         'portfolio-contact-message',
     ],
 ];

@@ -37,7 +37,7 @@ final class AdminController {
     }
     private function dashboard(int $uid): string {
         $u=$this->db->users()->find($uid); $projects=$this->db->projects()->forUser($uid); $skills=$this->db->userSkills()->forUser($uid);
-        return '<section class="admin"><nav>'.$this->nav().'</nav><h1>Saját Portfolio admin</h1><p>Bejelentkezve: <b>'.$this->esc($u['name']??'').'</b></p><div class="stats"><b>Skillek '.count($skills).'</b><b>Projektek '.count($projects).'</b></div><p><a class="portfolio-button" href="./u/'.$uid.'">Saját portfolio megtekintése</a></p></section>';
+        return '<section class="admin"><nav>'.$this->nav().'</nav><h1>Saját Portfolio admin</h1><p>Bejelentkezve: <b>'.$this->esc($u['name']??'').'</b></p><div class="stats"><b>Skillek '.count($skills).'</b><b>Projektek '.count($projects).'</b></div><p><a class="portfolio-button" href="./u/'.$uid.'">Saját portfolio megtekintése</a></p> <p> <a class="portfolio-button" href="'.$this->base.'/admin/messages/">Üzenetek</a> </p> </section>';
     }
     private function nav(): string
 {

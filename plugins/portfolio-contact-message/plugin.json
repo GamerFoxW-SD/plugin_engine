@@ -1,0 +1,9 @@
+{
+    "name": "portfolio-contact-message",
+    "version": "1.0.0",
+    "entry": "PortfolioContactMessagePlugin",
+    "namespace": "PortfolioContactMessage",
+    "dependencies": {
+        "portfolio-database": "^1.0"
+    }
+}
