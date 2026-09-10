@@ -70,7 +70,7 @@ final class GalleryPlugin implements PluginInterface
         $path = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
         $path = '/' . trim($path, '/');
 
-        return $path === '/git/my-plugin-engine/admin' ;
+        return $path === '/admin' ;
     }
 
     private function applicationBasePath(): string

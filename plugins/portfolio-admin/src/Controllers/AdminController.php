@@ -5,7 +5,7 @@ use PortfolioDatabase\PortfolioDatabasePlugin;
 use PortfolioTheme\PortfolioThemePlugin;
 
 final class AdminController {
-    private $base = '/git/my-plugin-engine';
+    private $base = '/';
     public function __construct(private PortfolioDatabasePlugin $db, private PortfolioThemePlugin $theme) {}
     private function esc($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     private function userId(): int { return (int)($_SESSION['portfolio_user_id'] ?? 0); }

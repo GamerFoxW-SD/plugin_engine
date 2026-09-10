@@ -6,7 +6,7 @@ namespace Gallery;
 final class GalleryService
 {
     private const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    private  string $rootURL = 'localhost/git/my-plugin-engine/';
+    private  string $rootURL = '/';
 
     private const ALLOWED_MIMES = [
         'image/jpeg',
