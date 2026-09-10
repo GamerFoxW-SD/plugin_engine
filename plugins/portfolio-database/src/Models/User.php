@@ -5,7 +5,13 @@ final class User {
     public function __construct(private \PDO $db) {}
     public function find(int $id): ?array { $s=$this->db->prepare("SELECT * FROM users WHERE id=?"); $s->execute([$id]); return $s->fetch() ?: null; }
     public function findByEmail(string $email): ?array { $s=$this->db->prepare("SELECT * FROM users WHERE email=?"); $s->execute([$email]); return $s->fetch() ?: null; }
-    public function all(): array { return $this->db->query("SELECT * FROM users ORDER BY name")->fetchAll(); }
+    public function all(): array { return $this->db->query("SELECT 
+    u.*,
+    COUNT(p.id) AS project_count
+FROM users u
+LEFT JOIN projects p ON p.user_id = u.id
+GROUP BY u.id
+ORDER BY project_count DESC, u.id ASC;")->fetchAll(); }
     public function create(array $d): int {
         $s=$this->db->prepare("INSERT INTO users(name,profile_image,email,phone,contact_visible,password_hash,is_admin) VALUES(?,?,?,?,?,?,?)");
         $s->execute([$d['name'],$d['profile_image']??null,$d['email'],$d['phone']??null,(int)($d['contact_visible']??1),$d['password_hash'],(int)($d['is_admin']??0)]);
